@@ -62,11 +62,11 @@ function M:peek()
 end
 
 function prettify_metadata(metadata)
-	local my_os = package.config:sub(1,1)
+	local my_os = ya.target_family()
 	local eb = "\27[1m" -- Enable bold
 	local db = "\27[0m" -- Disable bold
 	-- The Windows terminal doesn't seem to support ANSI escape codes? Untested
-	if my_os ~= "/" then 
+	if my_os == "windows" then 
 		eb = ""
 		db = ""
 	end
