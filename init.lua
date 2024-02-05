@@ -38,15 +38,10 @@ function M:peek()
 		end
 	until i >= self.skip + limit
 
-	metadata = prettify_metadata(metadata)
+	ya.preview_widgets(self, { ui.Paragraph.parse(self.area, prettify_metadata(metadata)) })
 
-	-- Show the cover art only if the preview pane is not hidden
-	local cover_width = 0
-	local cover_height = 0
-	if self.area.right ~= self.area.x then
-		cover_width = self.area.right / 6
-		cover_height = self.area.bottom / 3
-	end
+	local cover_width = self.area.w / 2 - 5
+	local cover_height = (self.area.h / 4) + 3
 
 	local bottom_right = ui.Rect {
 		x = self.area.right - cover_width,
@@ -56,17 +51,17 @@ function M:peek()
 	}
 
 	if self:preload() == 1 then
-		ya.preview_widgets(self, { ui.Paragraph.parse(self.area, metadata) })
 		ya.image_show(cache, bottom_right)
 	end
 end
 
 function prettify_metadata(metadata)
+	-- Todo)) Use ui.Line and ui.Span instead
 	local my_os = ya.target_family()
 	local eb = "\27[1m" -- Enable bold
 	local db = "\27[0m" -- Disable bold
 	-- The Windows terminal doesn't seem to support ANSI escape codes? Untested
-	if my_os == "windows" then 
+	if my_os == "windows" then
 		eb = ""
 		db = ""
 	end
