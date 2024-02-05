@@ -1,10 +1,10 @@
 # exifaudio.yazi
 
-Preview audio metadata on [Yazi](https://github.com/sxyazi/yazi).
+Preview audio metadata and cover on [Yazi](https://github.com/sxyazi/yazi).
 
 ![image](https://github.com/Sonico98/exifaudio.yazi/assets/61394886/53c1492c-9f05-4c80-a4e7-94fb36f35ca9)
 
-## Install
+## Installation
 
 ```sh
 # Linux/macOS
