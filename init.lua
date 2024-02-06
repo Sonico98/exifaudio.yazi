@@ -23,7 +23,7 @@ function M:peek()
 	:spawn()
 
 	local limit = self.area.h
-	local i, metadata = 0, ""
+	local i, metadata = 0, {}
 	repeat
 		local next, event = child:read_line()
 		if event == 1 then
@@ -34,11 +34,16 @@ function M:peek()
 
 		i = i + 1
 		if i > self.skip then
-			metadata = metadata .. next
+			local m_title, m_tag = prettify(next)
+			local ti = ui.Span(m_title):bold()
+			local ta = ui.Span(m_tag)
+			table.insert(metadata, ui.Line{ti, ta})
+			table.insert(metadata, ui.Line{})
 		end
 	until i >= self.skip + limit
-
-	ya.preview_widgets(self, { ui.Paragraph.parse(self.area, prettify_metadata(metadata)) })
+	
+	local p = ui.Paragraph(self.area, metadata):wrap(ui.Paragraph.WRAP)
+	ya.preview_widgets(self, { p })
 
 	local cover_width = self.area.w / 2 - 5
 	local cover_height = (self.area.h / 4) + 3
@@ -55,60 +60,51 @@ function M:peek()
 	end
 end
 
-function prettify_metadata(metadata)
-	-- Todo)) Use ui.Line and ui.Span instead
-	local my_os = ya.target_family()
-	local eb = "\27[1m" -- Enable bold
-	local db = "\27[0m" -- Disable bold
-	-- The Windows terminal doesn't seem to support ANSI escape codes? Untested
-	if my_os == "windows" then
-		eb = ""
-		db = ""
-	end
-
+function prettify(metadata)
 	local substitutions = {
-		Title = ""..eb.."Title:"..db,
-		SortName = "\n"..eb.."Sort Title:"..db,
-		TitleSort = "\n"..eb.."Sort Title:"..db,
-		TitleSortOrder = "\n"..eb.."Sort Title:"..db,
-		Artist = "\n"..eb.."Artist:"..db,
-		ARTIST = "\n"..eb.."Artist:"..db,
-		SortArtist = "\n"..eb.."Sort Artist:"..db,
-		ArtistSort = "\n"..eb.."Sort Artist:"..db,
-		PerformerSortOrder = "\n"..eb.."Sort Artist:"..db,
-		Album = "\n"..eb.."Album:"..db,
-		ALBUM = "\n"..eb.."Album:"..db,
-		SortAlbum = "\n"..eb.."Sort Album:"..db,
-		AlbumSort = "\n"..eb.."Sort Album:"..db,
-		AlbumSortOrder = "\n"..eb.."Sort Album:"..db,
-		AlbumArtist = "\n"..eb.."Album Artist:"..db,
-		SortAlbumArtist = "\n"..eb.."Sort Album Artist:"..db,
-		AlbumArtistSort = "\n"..eb.."Sort Album Artist:"..db,
-		AlbumArtistSortOrder = "\n"..eb.."Sort Album Artist:"..db,
-		Genre = "\n"..eb.."Genre:"..db,
-		GENRE = "\n"..eb.."Genre:"..db,
-		TrackNumber = "\n"..eb.."Track Number:"..db,
-		Year = "\n"..eb.."Year:"..db,
-		Duration = "\n"..eb.."Duration:"..db,
-		AudioBitrate = "\n"..eb.."Bitrate:"..db,
-		AvgBitrate = "\n"..eb.."Average Bitrate:"..db,
+		Sortname = "Sort Title:",
+		SortName = "Sort Title:",
+		TitleSort = "Sort Title:",
+		TitleSortOrder = "Sort Title:",
+		ArtistSort = "Sort Artist:",
+		SortArtist = "Sort Artist:",
+		Artist = "Artist:",
+		ARTIST = "Artist:",
+		PerformerSortOrder = "Sort Artist:",
+		SortAlbumArtist = "Sort Album Artist:",
+		AlbumArtistSortOrder = "Sort Album Artist:",
+		AlbumArtistSort = "Sort Album Artist:",
+		AlbumSortOrder = "Sort Album:",
+		AlbumSort = "Sort Album:",
+		SortAlbum = "Sort Album:",
+		Album = "Album:",
+		ALBUM = "Album:",
+		AlbumArtist = "Album Artist:",
+		Genre = "Genre:",
+		GENRE = "Genre:",
+		TrackNumber = "Track Number:",
+		Year = "Year:",
+		Duration = "Duration:",
+		AudioBitrate = "Bitrate:",
+		AvgBitrate = "Average Bitrate:",
+		AudioSampleRate = "Sample Rate:",
+		SampleRate = "Sample Rate:",
+		AudioChannels = "Channels:"
 	}
 
 	for k, v in pairs(substitutions) do
-		metadata = metadata:gsub(tostring(k) .. ":", v, 1)
+		metadata = metadata:gsub(tostring(k)..":", v, 1)
 	end
-	-- Exceptions
-	metadata,sc = metadata:gsub("AudioSample", "\n"..eb.."Sample")
-	if sc ~= 0 then
-		metadata = metadata:gsub("SampleRate:", ""..eb.."Sample Rate:"..db)
-	else
-		metadata = metadata:gsub("SampleRate:", "\n"..eb.."Sample Rate:"..db)
+
+	-- Separate the tag title from the tag data
+	local t={}
+	for str in string.gmatch(metadata , "([^"..":".."]+)") do
+                table.insert(t, str)
 	end
-	metadata,sc = metadata:gsub("AudioChannels:", "\n"..eb.."Channels:"..db)
-	if sc == 0 then
-		metadata = metadata:gsub("Channels:", "\n"..eb.."Channels:"..db)
-	end
-	return metadata
+
+	-- Add back semicolon to title, rejoin tag data if it happened to contain a semicolon
+	return t[1]..":", table.concat(t, ":", 2)
+
 end
 
 function M:seek(units)
