@@ -24,7 +24,7 @@ mime = "audio/*"
 exec = "exifaudio"
 ```
 
-Make sure you have [exiftool](https://exiftool.org/) installed, and can be found in your `PATH`.
+Make sure you have [exiftool](https://exiftool.org/) installed and in your `PATH`.
 
 ## Thanks
 
