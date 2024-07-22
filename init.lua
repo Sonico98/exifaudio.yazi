@@ -42,7 +42,9 @@ function M:peek()
 	if not status or child == nil then
 		status, child = pcall(Exiftool, self.file.url)
 		if not status or child == nil then
-			print("error")
+			local error = ui.Line { ui.Span("Make sure exiftool is installed and in your PATH") }
+			local p = ui.Paragraph(self.area, { error }):wrap(ui.Paragraph.WRAP)
+			ya.preview_widgets(self, { p })
 			return
 		end
 	end
@@ -129,16 +131,16 @@ function Prettify(metadata)
 		if str ~= "\n" then
 			table.insert(t, str)
 		else
-			table.insert(t, "")
+			table.insert(t, nil)
 		end
 	end
 
 	-- Add back semicolon to title, rejoin tag data if it happened to contain a semicolon
-	local title, data = "", ""
-	if t[1] ~= "" then
-		title, data = t[1]..":", table.concat(t, ":", 2)
+	local title, tag_data = "", ""
+	if t[1] ~= nil then
+		title, tag_data = t[1]..":", table.concat(t, ":", 2)
 	end
-	return title, data
+	return title, tag_data
 
 end
 
