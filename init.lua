@@ -1,11 +1,6 @@
 local M = {}
 
-function M:peek()
-	local cache = ya.file_cache(self)
-	if not cache then
-		return
-	end
-
+function Exiftool(...)
 	local child = Command("exiftool")
 		:args({
 			"-q", "-q", "-S", "-Title", "-SortName",
@@ -16,11 +11,41 @@ function M:peek()
 			"-AlbumArtistSortOrder", "-Genre", "-TrackNumber",
 			"-Year", "-Duration", "-SampleRate", 
 			"-AudioSampleRate", "-AudioBitrate", "-AvgBitrate",
-			"-Channels", "-AudioChannels", tostring(self.file.url),
+			"-Channels", "-AudioChannels", tostring(...),
 		})
 		:stdout(Command.PIPED)
 		:stderr(Command.NULL)
-	:spawn()
+		:spawn()
+	return child
+end
+
+function Mediainfo(...)
+	local username = ya.user_name()
+	local path = "/home/"..username.."/.config/yazi/plugins/exifaudio.yazi/"
+	local child = Command("mediainfo")
+		:args({
+			"--Output=file://"..path.."template.txt", tostring(...)
+		})
+		:stdout(Command.PIPED)
+		:stderr(Command.NULL)
+		:spawn()
+	return child
+end
+
+function M:peek()
+	local cache = ya.file_cache(self)
+	if not cache then
+		return
+	end
+
+	local status, child = pcall(Mediainfo, self.file.url)
+	if not status or child == nil then
+		status, child = pcall(Exiftool, self.file.url)
+		if not status or child == nil then
+			print("error")
+			return
+		end
+	end
 
 	local limit = self.area.h
 	local i, metadata = 0, {}
@@ -34,14 +59,16 @@ function M:peek()
 
 		i = i + 1
 		if i > self.skip then
-			local m_title, m_tag = prettify(next)
-			local ti = ui.Span(m_title):bold()
-			local ta = ui.Span(m_tag)
-			table.insert(metadata, ui.Line{ti, ta})
-			table.insert(metadata, ui.Line{})
+			local m_title, m_tag = Prettify(next)
+			if m_title ~= "" and m_tag ~= "" then
+				local ti = ui.Span(m_title):bold()
+				local ta = ui.Span(m_tag)
+				table.insert(metadata, ui.Line{ti, ta})
+				table.insert(metadata, ui.Line{})
+			end
 		end
 	until i >= self.skip + limit
-	
+
 	local p = ui.Paragraph(self.area, metadata):wrap(ui.Paragraph.WRAP)
 	ya.preview_widgets(self, { p })
 
@@ -60,7 +87,7 @@ function M:peek()
 	end
 end
 
-function prettify(metadata)
+function Prettify(metadata)
 	local substitutions = {
 		Sortname = "Sort Title:",
 		SortName = "Sort Title:",
@@ -99,11 +126,19 @@ function prettify(metadata)
 	-- Separate the tag title from the tag data
 	local t={}
 	for str in string.gmatch(metadata , "([^"..":".."]+)") do
-                table.insert(t, str)
+		if str ~= "\n" then
+			table.insert(t, str)
+		else
+			table.insert(t, "")
+		end
 	end
 
 	-- Add back semicolon to title, rejoin tag data if it happened to contain a semicolon
-	return t[1]..":", table.concat(t, ":", 2)
+	local title, data = "", ""
+	if t[1] ~= "" then
+		title, data = t[1]..":", table.concat(t, ":", 2)
+	end
+	return title, data
 
 end
 
