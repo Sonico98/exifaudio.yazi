@@ -175,10 +175,14 @@ function M:preload()
 	local mediainfo_template = 'General;"\
 $if(%Track%,Title: %Track%,)\
 $if(%Track/Sort%,Sort Title: %Track/Sort%,)\
+$if(%Title/Sort%,Sort Title: %Title/Sort%,)\
+$if(%TITLESORT%,Sort Title: %TITLESORT%,)\
 $if(%Performer%,Artist: %Performer%,)\
 $if(%Performer/Sort%,Sort Artist: %Performer/Sort%,)\
+$if(%ARTISTSORT%,Sort Artist: %ARTISTSORT%,)\
 $if(%Album%,Album: %Album%,)\
 $if(%Album/Sort%,Sort Album: %Album/Sort%)\
+$if(%ALBUMSORT%,Sort Album: %ALBUMSORT%)\
 $if(%Album/Performer%,Album Artist: %Album/Performer%)\
 $if(%Album/Performer/Sort%,Sort Album Artist: %Album/Performer/Sort%)\
 $if(%Genre%,Genre: %Genre%)\
