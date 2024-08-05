@@ -1,5 +1,13 @@
 local M = {}
 
+function GetPath(str)
+	local sep = '/'
+	if ya.target_family() == "windows" then
+		sep = '\\'
+	end
+    return str:match("(.*"..sep..")")
+end
+
 function Exiftool(...)
 	local child = Command("exiftool")
 		:args({
@@ -20,11 +28,11 @@ function Exiftool(...)
 end
 
 function Mediainfo(...)
-	local username = ya.user_name()
-	local path = "/home/"..username.."/.config/yazi/plugins/exifaudio.yazi/"
+	local file, cache_dir = ...
+	local template = cache_dir.."mediainfo.txt"
 	local child = Command("mediainfo")
 		:args({
-			"--Output=file://"..path.."template.txt", tostring(...)
+			"--Output=file://"..template, tostring(file)
 		})
 		:stdout(Command.PIPED)
 		:stderr(Command.NULL)
@@ -38,7 +46,11 @@ function M:peek()
 		return
 	end
 
-	local status, child = pcall(Mediainfo, self.file.url)
+	-- Get cache dir to find the mediainfo template file
+	local cache_dir = GetPath(tostring(cache))
+
+	-- Try mediainfo, otherwise use exiftool
+	local status, child = pcall(Mediainfo, self.file.url, cache_dir)
 	if not status or child == nil then
 		status, child = pcall(Exiftool, self.file.url)
 		if not status or child == nil then
@@ -159,6 +171,29 @@ function M:preload()
 	if not cache or fs.cha(cache) then
 		return 1
 	end
+
+	local mediainfo_template = 'General;"\
+$if(%Track%,Title: %Track%,)\
+$if(%Track/Sort%,Sort Title: %Track/Sort%,)\
+$if(%Performer%,Artist: %Performer%,)\
+$if(%Performer/Sort%,Sort Artist: %Performer/Sort%,)\
+$if(%Album%,Album: %Album%,)\
+$if(%Album/Sort%,Sort Album: %Album/Sort%)\
+$if(%Album/Performer%,Album Artist: %Album/Performer%)\
+$if(%Album/Performer/Sort%,Sort Album Artist: %Album/Performer/Sort%)\
+$if(%Genre%,Genre: %Genre%)\
+$if(%Track/Position%,Track Number: %Track/Position%)\
+$if(%Recorded_Date%,Year: %Recorded_Date%)\
+$if(%Duration/String%,Duration: %Duration/String%)\
+$if(%BitRate/String%,Bitrate: %BitRate/String%)\
+"\
+Audio;"Sample Rate: %SamplingRate%\
+Channels: %Channel(s)%"\
+'
+
+	-- Write the mediainfo template file into yazi's cache dir
+	local cache_dir = GetPath(tostring(cache))
+	fs.write(Url(cache_dir.."mediainfo.txt"), mediainfo_template)
 
 	local output = Command("exiftool")
 		:args({ "-b", "-CoverArt", "-Picture", tostring(self.file.url) })
