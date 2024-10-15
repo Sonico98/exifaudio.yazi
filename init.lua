@@ -50,13 +50,24 @@ function M:peek()
 	local cache_dir = GetPath(tostring(cache))
 
 	-- Try mediainfo, otherwise use exiftool
+	pcall(display_metadata_legacy)
+	pcall(display_metadata)
 	local status, child = pcall(Mediainfo, self.file.url, cache_dir)
 	if not status or child == nil then
 		status, child = pcall(Exiftool, self.file.url)
 		if not status or child == nil then
 			local error = ui.Line { ui.Span("Make sure exiftool is installed and in your PATH") }
-			local p = ui.Paragraph(self.area, { error }):wrap(ui.Paragraph.WRAP)
-			ya.preview_widgets(self, { p })
+			-- TODO)) Remove legacy method when v0.4 gets released
+			local function display_error_legacy()
+				local p = ui.Paragraph(self.area, { error }):wrap(ui.Paragraph.WRAP)
+				ya.preview_widgets(self, { p })
+			end
+			local function display_error()
+				local p = ui.Text(error):area(self.area):wrap(ui.Text.WRAP)
+				ya.preview_widgets(self, { p })
+			end
+			pcall(display_error_legacy)
+			pcall(display_error)
 			return
 		end
 	end
@@ -83,8 +94,17 @@ function M:peek()
 		end
 	until i >= self.skip + limit
 
-	local p = ui.Paragraph(self.area, metadata):wrap(ui.Paragraph.WRAP)
-	ya.preview_widgets(self, { p })
+	-- TODO)) Remove legacy method when v0.4 gets released
+	local function display_metadata_legacy()
+		local p = ui.Paragraph(self.area, metadata):wrap(ui.Paragraph.WRAP)
+		ya.preview_widgets(self, { p })
+	end
+	local function display_metadata()
+		local p = ui.Text(metadata):area(self.area):wrap(ui.Text.WRAP)
+		ya.preview_widgets(self, { p })
+	end
+	pcall(display_metadata_legacy)
+	pcall(display_metadata)
 
 	local cover_width = self.area.w / 2 - 5
 	local cover_height = (self.area.h / 4) + 3
