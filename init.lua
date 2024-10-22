@@ -50,8 +50,6 @@ function M:peek()
 	local cache_dir = GetPath(tostring(cache))
 
 	-- Try mediainfo, otherwise use exiftool
-	pcall(display_metadata_legacy)
-	pcall(display_metadata)
 	local status, child = pcall(Mediainfo, self.file.url, cache_dir)
 	if not status or child == nil then
 		status, child = pcall(Exiftool, self.file.url)
@@ -66,8 +64,7 @@ function M:peek()
 				local p = ui.Text(error):area(self.area):wrap(ui.Text.WRAP)
 				ya.preview_widgets(self, { p })
 			end
-			pcall(display_error_legacy)
-			pcall(display_error)
+			if pcall(display_error) then else pcall(display_error_legacy) end
 			return
 		end
 	end
@@ -103,8 +100,7 @@ function M:peek()
 		local p = ui.Text(metadata):area(self.area):wrap(ui.Text.WRAP)
 		ya.preview_widgets(self, { p })
 	end
-	pcall(display_metadata_legacy)
-	pcall(display_metadata)
+	if pcall(display_metadata) then else pcall(display_metadata_legacy) end
 
 	local cover_width = self.area.w / 2 - 5
 	local cover_height = (self.area.h / 4) + 3
