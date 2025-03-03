@@ -185,7 +185,7 @@ end
 function M:preload(job)
 	local cache = ya.file_cache(job)
 	if not cache or fs.cha(cache) then
-		return 1
+		return false
 	end
 
 	local mediainfo_template = 'General;"\
@@ -222,10 +222,10 @@ Channels: %Channel(s)%"\
 		:output()
 
 	if not output then
-		return 0
+		return false
 	end
 
-	return fs.write(cache, output.stdout) and 1 or 2
+	return fs.write(cache, output.stdout) and true or false
 end
 
 return M
