@@ -159,7 +159,7 @@ end
 function M:seek(job)
 	local h = cx.active.current.hovered
 	if h and h.url == job.file.url then
-		ya.manager_emit("peek", {
+		ya.emit("peek", {
 			tostring(math.max(0, cx.active.preview.skip + job.units)),
 			only_if = tostring(job.file.url),
 		})
